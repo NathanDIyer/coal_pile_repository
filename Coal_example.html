@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coal Pile Explorer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #87CEEB;
+            font-family: Arial, sans-serif;
+        }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            max-width: 300px;
+            z-index: 100;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+        }
+
+        #compass {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 120px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid #fff;
+            border-radius: 50%;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #flying-indicator {
+            position: absolute;
+            top: 140px;
+            right: 10px;
+            background: rgba(0, 150, 0, 0.9);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 100;
+            display: none;
+            border: 2px solid #00ff00;
+        }
+
+        #speed-indicator {
+            position: absolute;
+            top: 180px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 100;
+            border: 2px solid #ffffff;
+        }
+
+        /* Settings Modal Styles */
+        #settings-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            overflow-y: auto;
+        }
+
+        #settings-content {
+            background-color: #2c3e50;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #34495e;
+        }
+
+        #settings-header h2 {
+            margin: 0;
+            color: #ecf0f1;
+        }
+
+        .close-settings {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .close-settings:hover {
+            background: #c0392b;
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(52, 73, 94, 0.5);
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .settings-section h3 {
+            margin: 0 0 15px 0;
+            color: #3498db;
+            font-size: 18px;
+        }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #ecf0f1;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #34495e;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            border: none;
+        }
+
+        .slider-value {
+            min-width: 80px;
+            text-align: right;
+            font-weight: bold;
+            color: #f39c12;
+        }
+
+        .assumption-note {
+            font-size: 12px;
+            color: #bdc3c7;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .apply-settings {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .apply-settings:hover {
+            background: #229954;
+        }
+
+        .settings-button {
+            position: absolute;
+            top: 220px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 100;
+            border: 2px solid #ffffff;
+            cursor: pointer;
+        }
+
+        .settings-button:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        #compass-face {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            transform-origin: center;
+            transition: transform 0.1s ease;
+        }
+
+        .compass-direction {
+            position: absolute;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+        }
+
+        .compass-n {
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff4444;
+            font-size: 18px;
+        }
+
+        .compass-s {
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .compass-e {
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .compass-w {
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .compass-needle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 40px;
+            background: #ff4444;
+            transform-origin: bottom center;
+            transform: translate(-50%, -100%);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="info">
+        <!-- Content updated dynamically by updateInfoDisplay() -->
+    </div>
+
+    <div id="controls">
+        <strong>Controls:</strong><br>
+        WASD: Move around<br>
+        Hold Left Mouse: Look around<br>
+        Space: Jump (or fly up when flying)<br>
+        <strong>E: Toggle Flying ✈️</strong><br>
+        Shift: Run (or fly down + auto-land when flying)<br>
+        <strong>F: Shoot Fireball 🔥</strong><br>
+        <strong>↑: Add Turbine (+500k tons coal)</strong><br>
+        <strong>↓: Remove Turbine (-500k tons coal)</strong><br>
+        <strong>Y: Reset Coal Pile 🔄</strong><br>
+        <strong>P: Toggle Grid Units (acres ↔ km² ↔ mi²)</strong><br>
+        <em>Dynamic energy vs coal comparison! Gas tanks show equivalent natural gas.</em>
+    </div>
+
+    <div id="compass">
+        <div id="compass-face">
+            <div class="compass-direction compass-n">N</div>
+            <div class="compass-direction compass-s">S</div>
+            <div class="compass-direction compass-e">E</div>
+            <div class="compass-direction compass-w">W</div>
+            <div class="compass-needle"></div>
+        </div>
+    </div>
+
+    <div id="flying-indicator">✈️ FLYING MODE</div>
+    <div id="speed-indicator">🚶 0 mph</div>
+    <div class="settings-button" onclick="openSettings()">⚙️ Settings</div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal">
+        <div id="settings-content">
+            <div id="settings-header">
+                <h2>🔧 Energy Resource Assumptions</h2>
+                <button class="close-settings" onclick="closeSettings()">✕</button>
+            </div>
+
+            <!-- Coal Pile Assumptions -->
+            <div class="settings-section">
+                <h3>🏔️ Coal Pile Scaling</h3>
+                <div class="slider-group">
+                    <label class="slider-label">Base Coal Pile Radius (meters)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="coal-radius" min="40" max="100" value="60" step="1">
+                        <span class="slider-value" id="coal-radius-value">60m</span>
+                    </div>
+                    <div class="assumption-note">Base radius for 500k tons of coal. Realistic bulk density ~0.8 tons/m³.
+                    </div>
+                </div>
+                <div class="slider-group">
+                    <label class="slider-label">Base Coal Pile Height (meters)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="coal-height" min="30" max="80" value="45" step="1">
+                        <span class="slider-value" id="coal-height-value">45m</span>
+                    </div>
+                    <div class="assumption-note">Base height for 500k tons of coal. Realistic coal pile proportions.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Water Consumption Assumptions -->
+            <div class="settings-section">
+                <h3>💧 Water Consumption</h3>
+                <div class="slider-group">
+                    <label class="slider-label">Gallons of Water per Ton of Coal</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="water-per-ton" min="200" max="1000" value="500"
+                            step="10">
+                        <span class="slider-value" id="water-per-ton-value">500</span>
+                    </div>
+                    <div class="assumption-note">Typical range: 200-1000 gallons per ton. Includes mining, processing,
+                        and cooling water.</div>
+                </div>
+            </div>
+
+            <!-- Nuclear Waste Assumptions -->
+            <div class="settings-section">
+                <h3>☢️ Nuclear Waste Equivalent</h3>
+                <div class="slider-group">
+                    <label class="slider-label">Nuclear Waste Volume per 500k tons coal (m³)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="nuclear-waste-volume" min="500" max="2000" value="1071"
+                            step="10">
+                        <span class="slider-value" id="nuclear-waste-volume-value">1071m³</span>
+                    </div>
+                    <div class="assumption-note">High-level nuclear waste volume equivalent to coal energy production.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Natural Gas Assumptions -->
+            <div class="settings-section">
+                <h3>⛽ Natural Gas Storage</h3>
+                <div class="slider-group">
+                    <label class="slider-label">Gas Mass Ratio (gas tons / coal tons)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="gas-mass-ratio" min="0.3" max="0.6" value="0.434"
+                            step="0.001">
+                        <span class="slider-value" id="gas-mass-ratio-value">0.434</span>
+                    </div>
+                    <div class="assumption-note">Mass ratio based on energy density: coal ~24 MJ/kg, gas ~55 MJ/kg.
+                    </div>
+                </div>
+                <div class="slider-group">
+                    <label class="slider-label">Gas Storage Pressure (bar)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="gas-pressure" min="100" max="400" value="250" step="10">
+                        <span class="slider-value" id="gas-pressure-value">250 bar</span>
+                    </div>
+                    <div class="assumption-note">Higher pressure = smaller storage tanks. Typical range: 200-300 bar.
+                    </div>
+                </div>
+                <div class="slider-group">
+                    <label class="slider-label">Base Tank Diameter (meters)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="tank-diameter" min="10" max="40" value="20" step="1">
+                        <span class="slider-value" id="tank-diameter-value">20m</span>
+                    </div>
+                    <div class="assumption-note">Base diameter for gas storage tank (500k tons coal equivalent).</div>
+                </div>
+                <div class="slider-group">
+                    <label class="slider-label">Base Tank Height (meters)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="tank-height" min="15" max="50" value="30" step="1">
+                        <span class="slider-value" id="tank-height-value">30m</span>
+                    </div>
+                    <div class="assumption-note">Base height for gas storage tank (500k tons coal equivalent).</div>
+                </div>
+            </div>
+
+            <!-- Solar Farm Assumptions -->
+            <div class="settings-section">
+                <h3>☀️ Solar Farm Scaling</h3>
+                <div class="slider-group">
+                    <label class="slider-label">Wind Capacity Factor (%)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="wind-capacity" min="20" max="50" value="35" step="1">
+                        <span class="slider-value" id="wind-capacity-value">35%</span>
+                    </div>
+                    <div class="assumption-note">Typical wind farm capacity factor. Higher = more energy per MW.</div>
+                </div>
+                <div class="slider-group">
+                    <label class="slider-label">Solar Capacity Factor (%)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="solar-capacity" min="15" max="30" value="22" step="1">
+                        <span class="slider-value" id="solar-capacity-value">22%</span>
+                    </div>
+                    <div class="assumption-note">Typical solar farm capacity factor. Varies by location.</div>
+                </div>
+                <div class="slider-group">
+                    <label class="slider-label">Acres per MW Solar</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="acres-per-mw" min="3" max="8" value="5" step="0.1">
+                        <span class="slider-value" id="acres-per-mw-value">5.0</span>
+                    </div>
+                    <div class="assumption-note">Land area needed per MW of solar capacity. Includes spacing.</div>
+                </div>
+                <div class="slider-group">
+                    <label class="slider-label">Wind Turbine Power (MW)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="turbine-power" min="3" max="12" value="7" step="0.5">
+                        <span class="slider-value" id="turbine-power-value">7.0 MW</span>
+                    </div>
+                    <div class="assumption-note">Power rating per wind turbine. Modern turbines: 3-12 MW.</div>
+                </div>
+            </div>
+
+            <button class="apply-settings" onclick="applySettings()">Apply Settings & Update Scene</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x87CEEB, 200, 3000); // Extended fog for larger scene
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setClearColor(0x87CEEB);
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(500, 500, 250);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 2000;
+        directionalLight.shadow.camera.left = -1000;
+        directionalLight.shadow.camera.right = 1000;
+        directionalLight.shadow.camera.top = 1000;
+        directionalLight.shadow.camera.bottom = -1000;
+        scene.add(directionalLight);
+
+        // Ground (expanded for wind farm)
+        const groundGeometry = new THREE.PlaneGeometry(4000, 4000);
+        const groundMaterial = new THREE.MeshLambertMaterial({
+            color: 0x3a5f3a,
+            transparent: true,
+            opacity: 0.9
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        ground.renderOrder = -999; // Render ground very early
+        scene.add(ground);
+
+        // Grid system with unit toggle
+        let currentUnit = 'acres'; // 'acres', 'km2', 'mi2'
+        let gridLines = new THREE.Group();
+
+        function createGridLines(unit) {
+            // Remove existing grid lines
+            scene.remove(gridLines);
+            gridLines = new THREE.Group();
+
+            let gridSpacing, unitName;
+
+            switch (unit) {
+                case 'acres':
+                    gridSpacing = 63.6; // 1 acre = 63.6m × 63.6m
+                    unitName = 'acres';
+                    break;
+                case 'km2':
+                    gridSpacing = 1000; // 1 km² = 1000m × 1000m
+                    unitName = 'km²';
+                    break;
+                case 'mi2':
+                    gridSpacing = 1609.34; // 1 mi² = 1609.34m × 1609.34m
+                    unitName = 'mi²';
+                    break;
+            }
+
+            const gridMaterial = new THREE.LineBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.3
+            });
+
+            // Calculate how many grid lines we need
+            const gridExtent = 2000; // Half the ground size
+            const gridCount = Math.floor(gridExtent / gridSpacing);
+
+            // Create vertical lines (X direction)
+            for (let i = -gridCount; i <= gridCount; i++) {
+                const x = i * gridSpacing;
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(x, 0.1, -gridExtent),
+                    new THREE.Vector3(x, 0.1, gridExtent)
+                ]);
+                const line = new THREE.Line(geometry, gridMaterial);
+                gridLines.add(line);
+            }
+
+            // Create horizontal lines (Z direction)
+            for (let i = -gridCount; i <= gridCount; i++) {
+                const z = i * gridSpacing;
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-gridExtent, 0.1, z),
+                    new THREE.Vector3(gridExtent, 0.1, z)
+                ]);
+                const line = new THREE.Line(geometry, gridMaterial);
+                gridLines.add(line);
+            }
+
+            scene.add(gridLines);
+            console.log(`Grid switched to ${unitName} (${gridSpacing}m spacing)`);
+        }
+
+        // Initialize with acres
+        createGridLines('acres');
+
+        // Settings configuration object
+        let settings = {
+            // Coal pile settings (adjusted for realistic coal density ~0.8 tons/m³)
+            coalRadius: 60,
+            coalHeight: 45,
+
+            // Water consumption settings
+            waterPerTon: 500,
+
+            // Nuclear waste settings
+            nuclearWasteVolume: 1071,
+
+            // Natural gas settings
+            gasMassRatio: 0.434,
+            gasPressure: 250,
+            tankDiameter: 20,
+            tankHeight: 30,
+
+            // Solar/wind settings
+            windCapacityFactor: 0.35,
+            solarCapacityFactor: 0.22,
+            acresPerMW: 5,
+            turbinePower: 7
+        };
+
+        // Dynamic coal pile and turbine system
+        let currentTurbineCount = 0; // Start at 0, then build up to 10
+        let currentCoalMass = 5000000; // 5 million tons initially
+        let coalPile; // Will store current coal pile
+        let waterCube; // Will store current water cube
+        let nuclearWasteBlock; // Will store current nuclear waste block
+        let solarFarm = []; // Will store solar panel arrays
+        let coalChunks = []; // Will store coal chunks when pile is destroyed
+        let isCoalPileDestroyed = false; // Track if coal pile is destroyed
+
+        // Store collision objects (initialized early)
+        const collisionObjects = [null]; // Will be updated with coalPile
+
+        function calculateCoalDimensions(massInTons) {
+            // Base: 500k tons = configurable radius and height
+            const baseMass = 500000;
+            const baseRadius = settings.coalRadius;
+            const baseHeight = settings.coalHeight;
+
+            const scaleFactor = Math.pow(massInTons / baseMass, 1 / 3); // Cube root for volume scaling
+            return {
+                radius: baseRadius * scaleFactor,
+                height: baseHeight * scaleFactor
+            };
+        }
+
+        function calculateWaterCubeDimensions(massInTons) {
+            // Configurable gallons per ton of coal
+            const gallonsPerTon = settings.waterPerTon;
+            const totalGallons = massInTons * gallonsPerTon;
+
+            // Convert gallons to cubic meters (1 gallon = 0.00378541 cubic meters)
+            const cubicMeters = totalGallons * 0.00378541;
+
+            // Calculate side length for perfect cube
+            const sideLength = Math.pow(cubicMeters, 1 / 3);
+
+            return {
+                sideLength: sideLength,
+                volume: cubicMeters,
+                gallons: totalGallons
+            };
+        }
+
+        function calculateNuclearWasteDimensions(massInTons) {
+            // Configurable cubic meters per 500k tons of coal (equivalent nuclear waste)
+            const baseMass = 500000; // 500k tons
+            const baseVolume = settings.nuclearWasteVolume; // cubic meters
+
+            // Scale nuclear waste volume proportionally
+            const scaleFactor = massInTons / baseMass;
+            const totalVolume = baseVolume * scaleFactor;
+
+            // Calculate side length for perfect cube
+            const sideLength = Math.pow(totalVolume, 1 / 3);
+
+            return {
+                sideLength: sideLength,
+                volume: totalVolume
+            };
+        }
+
+        function calculateGasStorageDimensions(massInTons) {
+            // Natural gas energy density: ~55 MJ/kg
+            // Coal energy density: ~24 MJ/kg
+            // So we need about 2.3x less mass of gas for same energy
+
+            // For 500k tons of coal, we need ~217k tons of natural gas
+            const baseMass = 500000; // 500k tons coal
+            const gasMassRatio = settings.gasMassRatio; // Configurable mass ratio
+            const gasMass = massInTons * gasMassRatio;
+
+            // Natural gas density at standard conditions: ~0.668 kg/m³
+            // But stored under pressure (typically 200-300 bar), so much more compact
+            // At configurable pressure, density varies
+            const gasDensity = 170 * (settings.gasPressure / 250); // kg/m³ at configurable pressure
+            const gasVolume = (gasMass * 1000) / gasDensity; // Convert tons to kg
+
+            // Calculate as single cylindrical storage tank that scales
+            // Base tank: configurable diameter and height for 500k tons coal equivalent
+            const baseTankDiameter = settings.tankDiameter; // meters
+            const baseTankHeight = settings.tankHeight; // meters
+            const baseTankVolume = Math.PI * Math.pow(baseTankDiameter / 2, 2) * baseTankHeight;
+            const baseGasVolume = (baseMass * gasMassRatio * 1000) / gasDensity;
+
+            // Scale factor based on volume ratio
+            const scaleFactor = Math.pow(gasVolume / baseGasVolume, 1 / 3); // Cube root for 3D scaling
+
+            return {
+                tankDiameter: baseTankDiameter * scaleFactor,
+                tankHeight: baseTankHeight * scaleFactor,
+                totalVolume: gasVolume,
+                gasMass: gasMass,
+                gasVolume: gasVolume,
+                scaleFactor: scaleFactor
+            };
+        }
+
+        function createGasStorageTanks(massInTons) {
+            // Remove existing gas tank
+            if (window.gasTank) {
+                scene.remove(window.gasTank);
+                scene.remove(window.gasGauge);
+            }
+            window.gasTanks = []; // Keep array for collision detection
+
+            const gasDimensions = calculateGasStorageDimensions(massInTons);
+            const tankDiameter = gasDimensions.tankDiameter;
+            const tankHeight = gasDimensions.tankHeight;
+
+            // Position single tank to the left of coal pile
+            const coalDimensions = calculateCoalDimensions(massInTons);
+            const tankX = -(coalDimensions.radius + tankDiameter / 2 + 100); // 100m gap from coal pile
+            const tankZ = 150; // Same Z as coal pile
+
+            // Create cylindrical tank
+            const tankGeometry = new THREE.CylinderGeometry(tankDiameter / 2, tankDiameter / 2, tankHeight, 16);
+            const tankMaterial = new THREE.MeshLambertMaterial({
+                color: 0x4a4a4a, // Dark grey for industrial look
+                transparent: true,
+                opacity: 0.9
+            });
+
+            const tank = new THREE.Mesh(tankGeometry, tankMaterial);
+            tank.position.set(tankX, tankHeight / 2, tankZ); // sit on ground
+
+            tank.castShadow = true;
+            tank.receiveShadow = true;
+            scene.add(tank);
+            window.gasTank = tank;
+            window.gasTanks.push(tank); // Add to array for collision detection
+
+            // Add pressure gauge on tank
+            const gaugeGeometry = new THREE.CylinderGeometry(1, 1, 0.5, 8);
+            const gaugeMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+            const gauge = new THREE.Mesh(gaugeGeometry, gaugeMaterial);
+            gauge.position.set(tankX + tankDiameter / 2 + 2, tankHeight + 5, tankZ);
+            scene.add(gauge);
+            window.gasGauge = gauge;
+            window.gasTanks.push(gauge); // Add to array for collision detection
+
+            return window.gasTanks;
+        }
+
+        function calculateSolarFarmDimensions(turbineCount) {
+            // Calculate equivalent energy production over 25 years
+            const windMW = turbineCount * settings.turbinePower;
+            const windCapacityFactor = settings.windCapacityFactor; // Configurable capacity factor for wind
+            const solarCapacityFactor = settings.solarCapacityFactor; // Configurable capacity factor for solar
+
+            // Wind energy over 25 years
+            const windEnergyMWh = windMW * windCapacityFactor * 8760 * 25;
+
+            // Solar MW needed to match wind energy
+            const solarMWNeeded = windEnergyMWh / (solarCapacityFactor * 8760 * 25);
+
+            // Solar acreage (configurable acres per MW)
+            const acresNeeded = solarMWNeeded * settings.acresPerMW;
+            const areaM2 = acresNeeded * 4047; // 1 acre = 4047 m²
+
+            // Create square solar farm
+            const sideLength = Math.sqrt(areaM2);
+
+            return {
+                sideLength: sideLength,
+                areaM2: areaM2,
+                acres: acresNeeded,
+                solarMW: solarMWNeeded,
+                windMW: windMW
+            };
+        }
+
+        function createCoalChunks(originalPile, massInTons) {
+            // Remove existing chunks
+            coalChunks.forEach(chunk => scene.remove(chunk));
+            coalChunks = [];
+
+            const dimensions = calculateCoalDimensions(massInTons);
+            const chunkCount = Math.floor(massInTons / 100000); // 1 chunk per 100k tons
+            const coalMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+
+            // Create explosion center (where the coal pile was)
+            const explosionCenter = new THREE.Vector3(0, dimensions.height / 2, 150);
+
+            for (let i = 0; i < chunkCount; i++) {
+                // Create chunk geometry (random size)
+                const chunkSize = 2 + Math.random() * 8;
+                const chunkGeometry = new THREE.SphereGeometry(chunkSize, 8, 6);
+                const chunk = new THREE.Mesh(chunkGeometry, coalMaterial);
+
+                // Random position within coal pile bounds
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.random() * dimensions.radius;
+                const height = Math.random() * dimensions.height;
+
+                chunk.position.set(
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius + 150
+                );
+
+                // Add physics properties
+                chunk.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 60, // Random X velocity
+                    Math.random() * 40 + 20,    // Upward velocity
+                    (Math.random() - 0.5) * 60  // Random Z velocity
+                );
+                chunk.angularVelocity = new THREE.Vector3(
+                    Math.random() * 10,
+                    Math.random() * 10,
+                    Math.random() * 10
+                );
+                chunk.life = 10.0; // 10 seconds before chunks disappear
+
+                chunk.castShadow = true;
+                scene.add(chunk);
+                coalChunks.push(chunk);
+            }
+
+            console.log("💥 Coal pile destroyed! Created", chunkCount, "chunks");
+        }
+
+        function resetCoalPile() {
+            // Remove all chunks
+            coalChunks.forEach(chunk => scene.remove(chunk));
+            coalChunks = [];
+
+            // Recreate coal pile
+            isCoalPileDestroyed = false;
+            createCoalPile(currentCoalMass);
+            collisionObjects[0] = coalPile;
+
+            console.log("🔄 Coal pile reset!");
+        }
+
+        function createCoalPile(massInTons) {
+            // Remove existing coal pile
+            if (coalPile) {
+                scene.remove(coalPile);
+            }
+
+            const dimensions = calculateCoalDimensions(massInTons);
+            const segments = 64;
+
+            // Create base cone geometry
+            const coalGeometry = new THREE.ConeGeometry(dimensions.radius, dimensions.height, segments, 20);
+
+            // Add noise to make it look more realistic
+            const vertices = coalGeometry.attributes.position.array;
+            for (let i = 0; i < vertices.length; i += 3) {
+                const x = vertices[i];
+                const y = vertices[i + 1];
+                const z = vertices[i + 2];
+
+                // Add some random displacement for realistic pile shape
+                const noise = (Math.random() - 0.5) * 8 * (dimensions.radius / 93); // Scale noise with size
+                const heightFactor = Math.max(0, 1 - (y / dimensions.height));
+
+                vertices[i] += noise * heightFactor * 0.3;
+                vertices[i + 1] += noise * heightFactor * 0.1;
+                vertices[i + 2] += noise * heightFactor * 0.3;
+            }
+            coalGeometry.attributes.position.needsUpdate = true;
+            coalGeometry.computeVertexNormals();
+
+            // Coal material - dark with some variation
+            const coalMaterial = new THREE.MeshLambertMaterial({
+                color: 0x1a1a1a
+            });
+
+            coalPile = new THREE.Mesh(coalGeometry, coalMaterial);
+            coalPile.position.y = dimensions.height / 2;
+            coalPile.position.z = 150; // 150m north
+            coalPile.castShadow = true;
+            coalPile.receiveShadow = true;
+            scene.add(coalPile);
+
+            // Add smaller coal chunks around the base
+            for (let i = 0; i < 50; i++) {
+                const chunkGeometry = new THREE.SphereGeometry(
+                    Math.random() * 0.5 + 0.2,
+                    8, 6
+                );
+                const chunk = new THREE.Mesh(chunkGeometry, coalMaterial);
+
+                const angle = Math.random() * Math.PI * 2;
+                const distance = dimensions.radius + Math.random() * 10;
+                chunk.position.x = Math.cos(angle) * distance;
+                chunk.position.z = Math.sin(angle) * distance + 150; // 150m north
+                chunk.position.y = Math.random() * 0.5;
+
+                chunk.castShadow = true;
+                scene.add(chunk);
+            }
+
+            return coalPile;
+        }
+
+        function createWaterCube(massInTons) {
+            // Remove existing water cube
+            if (waterCube) {
+                scene.remove(waterCube);
+            }
+
+            const waterDimensions = calculateWaterCubeDimensions(massInTons);
+            const sideLength = waterDimensions.sideLength;
+
+            // Create water cube geometry
+            const waterGeometry = new THREE.BoxGeometry(sideLength, sideLength, sideLength);
+
+            // Water material - blue with transparency
+            const waterMaterial = new THREE.MeshLambertMaterial({
+                color: 0x4A90E2,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            waterCube = new THREE.Mesh(waterGeometry, waterMaterial);
+
+            // Position next to coal pile (to the right)
+            const coalDimensions = calculateCoalDimensions(massInTons);
+            waterCube.position.x = coalDimensions.radius + sideLength / 2 + 50; // 50m gap
+            waterCube.position.y = sideLength / 2; // sit on ground
+            waterCube.position.z = 150; // 150m north (same as coal pile)
+
+            waterCube.castShadow = true;
+            waterCube.receiveShadow = true;
+            scene.add(waterCube);
+
+            return waterCube;
+        }
+
+        function createNuclearWasteBlock(massInTons) {
+            // Remove existing nuclear waste block
+            if (nuclearWasteBlock) {
+                scene.remove(nuclearWasteBlock);
+            }
+
+            const wasteDimensions = calculateNuclearWasteDimensions(massInTons);
+            const sideLength = wasteDimensions.sideLength;
+
+            // Create nuclear waste block geometry
+            const wasteGeometry = new THREE.BoxGeometry(sideLength, sideLength, sideLength);
+
+            // Nuclear waste material - grey
+            const wasteMaterial = new THREE.MeshLambertMaterial({
+                color: 0x808080
+            });
+
+            nuclearWasteBlock = new THREE.Mesh(wasteGeometry, wasteMaterial);
+
+            // Position west of gas tank (in-line with gas tank)
+            const coalDimensions = calculateCoalDimensions(massInTons);
+            const gasDimensions = calculateGasStorageDimensions(massInTons);
+            const gasTankX = -(coalDimensions.radius + gasDimensions.tankDiameter / 2 + 100); // Gas tank position
+            nuclearWasteBlock.position.x = gasTankX - sideLength / 2 - 100; // 100m west of gas tank
+            nuclearWasteBlock.position.y = sideLength / 2; // sit on ground
+            nuclearWasteBlock.position.z = 150; // Same Z as coal pile and gas tank
+
+            nuclearWasteBlock.castShadow = true;
+            nuclearWasteBlock.receiveShadow = true;
+            scene.add(nuclearWasteBlock);
+
+            return nuclearWasteBlock;
+        }
+
+        function createSolarFarm(turbineCount) {
+            // Remove existing solar farm
+            solarFarm.forEach(panel => scene.remove(panel));
+            solarFarm = [];
+
+            const solarDimensions = calculateSolarFarmDimensions(turbineCount);
+            const farmSize = solarDimensions.sideLength;
+
+            // Position north of coal pile, expanding north and east
+            const coalZ = 150; // Coal pile is at z=150
+            const nuclearWasteZ = coalZ + 100; // Nuclear waste is ~100m north of coal
+            const solarStartZ = nuclearWasteZ + 100; // Start 100m north of nuclear waste
+
+            // Simple dark square showing total acreage needed (thicker)
+            const farmGeometry = new THREE.BoxGeometry(farmSize, 2.0, farmSize); // 2m thick instead of plane
+            const farmMaterial = new THREE.MeshBasicMaterial({
+                color: 0x2a2a2a, // Dark grey for solar farm
+                side: THREE.DoubleSide // Render both sides
+            });
+
+            const farmBox = new THREE.Mesh(farmGeometry, farmMaterial);
+            farmBox.position.set(farmSize / 2 - 600, 1.0, solarStartZ + farmSize / 2); // Moved west by 600m total
+            farmBox.renderOrder = 999; // Render very late
+            scene.add(farmBox);
+            solarFarm.push(farmBox);
+
+            // Simple corner markers to show scale (aligned with plane)
+            const corners = [
+                [-600, 0, solarStartZ], // Southwest corner
+                [farmSize - 600, 0, solarStartZ], // Southeast corner  
+                [farmSize - 600, 0, solarStartZ + farmSize], // Northeast corner
+                [-600, 0, solarStartZ + farmSize] // Northwest corner
+            ];
+
+            corners.forEach((corner, index) => {
+                const markerGeometry = new THREE.ConeGeometry(4, 15, 6);
+                const markerMaterial = new THREE.MeshLambertMaterial({
+                    color: 0xffaa00 // Orange markers
+                });
+                const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                marker.position.set(corner[0], corner[1] + 7.5, corner[2]);
+                scene.add(marker);
+                solarFarm.push(marker);
+            });
+        }
+
+        // Add scalable building north of coal pile for scale comparison
+        // Each story: ~3.5m height (typical office building)
+        const buildingPosition = { x: 0, z: 350 }; // North of coal pile
+        const storyHeight = 3.5; // meters per story
+        const buildingWidth = 40; // meters
+        const buildingDepth = 30; // meters
+
+        // Calculate building height based on coal pile height
+        function calculateBuildingHeight(coalMass) {
+            const coalDimensions = calculateCoalDimensions(coalMass);
+            const coalHeight = coalDimensions.height;
+            // Scale building to match coal pile height, but cap at reasonable building height
+            const maxBuildingHeight = 200; // meters (about 57 stories)
+            const buildingHeight = Math.min(coalHeight, maxBuildingHeight);
+            return buildingHeight;
+        }
+
+        function createBuilding(coalMass) {
+            // Remove existing building elements
+            if (window.buildingElements) {
+                window.buildingElements.forEach(element => scene.remove(element));
+            }
+            window.buildingElements = [];
+
+            const totalHeight = calculateBuildingHeight(coalMass);
+            const storyCount = Math.floor(totalHeight / storyHeight);
+
+            // Create building base/foundation
+            const foundationGeometry = new THREE.BoxGeometry(buildingWidth + 6, 3, buildingDepth + 6);
+            const foundationMaterial = new THREE.MeshLambertMaterial({
+                color: 0x444444
+            });
+            const foundation = new THREE.Mesh(foundationGeometry, foundationMaterial);
+            foundation.position.set(buildingPosition.x, 1.5, buildingPosition.z);
+            foundation.castShadow = true;
+            foundation.receiveShadow = true;
+            scene.add(foundation);
+            window.buildingElements.push(foundation);
+
+            // Create main building structure
+            const buildingGeometry = new THREE.BoxGeometry(buildingWidth, totalHeight, buildingDepth);
+            const buildingMaterial = new THREE.MeshLambertMaterial({
+                color: 0x2c3e50 // Dark blue-grey
+            });
+            const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+            building.position.set(buildingPosition.x, totalHeight / 2 + 3, buildingPosition.z);
+            building.castShadow = true;
+            building.receiveShadow = true;
+            scene.add(building);
+            window.buildingElements.push(building);
+
+            // Add glass facade panels
+            const glassMaterial = new THREE.MeshLambertMaterial({
+                color: 0x87ceeb, // Sky blue
+                transparent: true,
+                opacity: 0.7
+            });
+
+            // Create window grid pattern for each story
+            const windowWidth = 2.5;
+            const windowHeight = 2.2;
+            const windowSpacing = 3.5;
+            const windowsPerRow = Math.floor(buildingWidth / windowSpacing);
+            const windowsPerColumn = Math.floor(buildingDepth / windowSpacing);
+
+            for (let story = 1; story <= storyCount; story++) {
+                const y = story * storyHeight + 3; // +3 for foundation height
+
+                // Windows on front face (facing coal pile)
+                for (let col = 0; col < windowsPerRow; col++) {
+                    const windowGeometry = new THREE.PlaneGeometry(windowWidth, windowHeight);
+                    const windowMesh = new THREE.Mesh(windowGeometry, glassMaterial);
+                    windowMesh.position.set(
+                        buildingPosition.x - buildingWidth / 2 + (col + 0.5) * windowSpacing,
+                        y,
+                        buildingPosition.z + buildingDepth / 2 + 0.1
+                    );
+                    windowMesh.rotation.x = Math.PI / 2;
+                    scene.add(windowMesh);
+                    window.buildingElements.push(windowMesh);
+                }
+
+                // Windows on side faces
+                for (let row = 0; row < windowsPerColumn; row++) {
+                    // Left side windows
+                    const leftWindowGeometry = new THREE.PlaneGeometry(windowHeight, windowWidth);
+                    const leftWindow = new THREE.Mesh(leftWindowGeometry, glassMaterial);
+                    leftWindow.position.set(
+                        buildingPosition.x - buildingWidth / 2 - 0.1,
+                        y,
+                        buildingPosition.z - buildingDepth / 2 + (row + 0.5) * windowSpacing
+                    );
+                    leftWindow.rotation.y = Math.PI / 2;
+                    scene.add(leftWindow);
+                    window.buildingElements.push(leftWindow);
+
+                    // Right side windows
+                    const rightWindowGeometry = new THREE.PlaneGeometry(windowHeight, windowWidth);
+                    const rightWindow = new THREE.Mesh(rightWindowGeometry, glassMaterial);
+                    rightWindow.position.set(
+                        buildingPosition.x + buildingWidth / 2 + 0.1,
+                        y,
+                        buildingPosition.z - buildingDepth / 2 + (row + 0.5) * windowSpacing
+                    );
+                    rightWindow.rotation.y = -Math.PI / 2;
+                    scene.add(rightWindow);
+                    window.buildingElements.push(rightWindow);
+                }
+            }
+
+            // Add architectural details - corner pillars
+            const pillarGeometry = new THREE.BoxGeometry(1, totalHeight, 1);
+            const pillarMaterial = new THREE.MeshLambertMaterial({ color: 0x34495e });
+
+            const cornerPositions = [
+                { x: buildingPosition.x - buildingWidth / 2 - 0.5, z: buildingPosition.z - buildingDepth / 2 - 0.5 },
+                { x: buildingPosition.x + buildingWidth / 2 + 0.5, z: buildingPosition.z - buildingDepth / 2 - 0.5 },
+                { x: buildingPosition.x - buildingWidth / 2 - 0.5, z: buildingPosition.z + buildingDepth / 2 + 0.5 },
+                { x: buildingPosition.x + buildingWidth / 2 + 0.5, z: buildingPosition.z + buildingDepth / 2 + 0.5 }
+            ];
+
+            cornerPositions.forEach(pos => {
+                const pillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+                pillar.position.set(pos.x, totalHeight / 2 + 3, pos.z);
+                pillar.castShadow = true;
+                scene.add(pillar);
+                window.buildingElements.push(pillar);
+            });
+
+            // Add rooftop details
+            const roofGeometry = new THREE.BoxGeometry(buildingWidth + 2, 2, buildingDepth + 2);
+            const roofMaterial = new THREE.MeshLambertMaterial({ color: 0x34495e });
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.set(buildingPosition.x, totalHeight + 4, buildingPosition.z);
+            roof.castShadow = true;
+            scene.add(roof);
+            window.buildingElements.push(roof);
+
+            // Add story level indicators (subtle lines)
+            const storyLineMaterial = new THREE.LineBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.4
+            });
+
+            for (let story = 1; story <= storyCount; story++) {
+                const y = story * storyHeight + 3; // +3 for foundation height
+
+                // Create subtle horizontal line for each story
+                const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(buildingPosition.x - buildingWidth / 2 - 2, y, buildingPosition.z - buildingDepth / 2),
+                    new THREE.Vector3(buildingPosition.x + buildingWidth / 2 + 2, y, buildingPosition.z - buildingDepth / 2)
+                ]);
+                const storyLine = new THREE.Line(lineGeometry, storyLineMaterial);
+                scene.add(storyLine);
+                window.buildingElements.push(storyLine);
+
+                // Add story number labels (every 5th story)
+                if (story % 5 === 0) {
+                    // Create story number indicator
+                    const labelGeometry = new THREE.PlaneGeometry(6, 2);
+                    const labelMaterial = new THREE.MeshBasicMaterial({
+                        color: 0xffffff,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    const label = new THREE.Mesh(labelGeometry, labelMaterial);
+                    label.position.set(buildingPosition.x - buildingWidth / 2 - 4, y, buildingPosition.z);
+                    label.rotation.y = Math.PI / 2; // Face outward
+                    scene.add(label);
+                    window.buildingElements.push(label);
+                }
+            }
+        }
+
+        // Add Statue of Liberty for scale comparison
+        // Total height: 93 meters (305 feet including pedestal)
+        const libertyPosition = { x: -900, z: 0 };
+
+        // Pedestal (47m tall)
+        const pedestalGeometry = new THREE.BoxGeometry(25, 47, 25);
+        const pedestalMaterial = new THREE.MeshLambertMaterial({ color: 0x8b8680 }); // stone color
+        const pedestal = new THREE.Mesh(pedestalGeometry, pedestalMaterial);
+        pedestal.position.set(libertyPosition.x, 47 / 2, libertyPosition.z);
+        pedestal.castShadow = true;
+        scene.add(pedestal);
+
+        // Statue body (tapered cylinder, 46m tall)
+        const bodyGeometry = new THREE.CylinderGeometry(3, 8, 38, 16); // narrower at top
+        const libertyMaterial = new THREE.MeshLambertMaterial({ color: 0x7db46c }); // green patina color
+        const libertyBody = new THREE.Mesh(bodyGeometry, libertyMaterial);
+        libertyBody.position.set(libertyPosition.x, 47 + 19, libertyPosition.z); // on top of pedestal
+        libertyBody.castShadow = true;
+        scene.add(libertyBody);
+
+        // Head/crown area
+        const headGeometry = new THREE.CylinderGeometry(2, 3, 6, 12);
+        const libertyHead = new THREE.Mesh(headGeometry, libertyMaterial);
+        libertyHead.position.set(libertyPosition.x, 47 + 38 + 3, libertyPosition.z);
+        libertyHead.castShadow = true;
+        scene.add(libertyHead);
+
+        // Crown spikes
+        for (let i = 0; i < 7; i++) {
+            const spikeGeometry = new THREE.ConeGeometry(0.3, 4, 6);
+            const spike = new THREE.Mesh(spikeGeometry, libertyMaterial);
+            const angle = (i / 7) * Math.PI * 2;
+            const radius = 2.5;
+            spike.position.set(
+                libertyPosition.x + Math.cos(angle) * radius,
+                47 + 38 + 6 + 2,
+                libertyPosition.z + Math.sin(angle) * radius
+            );
+            spike.castShadow = true;
+            scene.add(spike);
+        }
+
+        // Torch arm (right arm raised)
+        const armGeometry = new THREE.CylinderGeometry(0.5, 0.8, 15, 8);
+        const libertyArm = new THREE.Mesh(armGeometry, libertyMaterial);
+        libertyArm.rotation.z = -Math.PI / 4; // angled upward
+        libertyArm.position.set(libertyPosition.x + 6, 47 + 30, libertyPosition.z);
+        libertyArm.castShadow = true;
+        scene.add(libertyArm);
+
+        // Torch
+        const torchBaseGeometry = new THREE.CylinderGeometry(0.8, 0.8, 3, 8);
+        const torchBase = new THREE.Mesh(torchBaseGeometry, libertyMaterial);
+        torchBase.position.set(libertyPosition.x + 12, 47 + 38, libertyPosition.z);
+        torchBase.castShadow = true;
+        scene.add(torchBase);
+
+        // Torch flame
+        const flameGeometry = new THREE.ConeGeometry(1.5, 4, 8);
+        const flameMaterial = new THREE.MeshLambertMaterial({ color: 0xffd700 }); // golden flame
+        const flame = new THREE.Mesh(flameGeometry, flameMaterial);
+        flame.position.set(libertyPosition.x + 12, 47 + 38 + 3.5, libertyPosition.z);
+        scene.add(flame);
+
+        // Create Wind Farm (Dynamic turbine management)
+        const allTurbines = []; // Store all turbine objects
+        const turbineRotors = []; // Store all rotors for animation
+        const hubHeight = 120; // meters
+        const bladeLength = 80; // meters (160m rotor diameter)
+
+        function createWindTurbine(x, z, index) {
+            const turbinePosition = { x: x, y: 0, z: z };
+            const turbineGroup = new THREE.Group();
+
+            // Wind turbine materials
+            const turbineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+
+            // Tower (tapered cylinder)
+            const towerGeometry = new THREE.CylinderGeometry(1.5, 2, hubHeight, 16);
+            const tower = new THREE.Mesh(towerGeometry, turbineMaterial);
+            tower.position.set(0, hubHeight / 2, 0);
+            tower.castShadow = true;
+            turbineGroup.add(tower);
+
+            // Nacelle (generator housing)
+            const nacelleGeometry = new THREE.BoxGeometry(12, 4, 4);
+            const nacelle = new THREE.Mesh(nacelleGeometry, turbineMaterial);
+            nacelle.position.set(0, hubHeight, 0);
+            nacelle.castShadow = true;
+            turbineGroup.add(nacelle);
+
+            // Hub (center of rotor) - should be stationary
+            const hubGeometry = new THREE.CylinderGeometry(1.5, 1.5, 2, 16);
+            const hub = new THREE.Mesh(hubGeometry, turbineMaterial);
+            hub.rotation.z = Math.PI / 2;
+            hub.position.set(6, hubHeight, 0);
+            hub.castShadow = true;
+            turbineGroup.add(hub); // Add hub to main turbine group, not rotor group
+
+            // Create rotor group (blades only) for rotation
+            const rotorGroup = new THREE.Group();
+
+            // Create 3 blades
+            for (let i = 0; i < 3; i++) {
+                const bladeGeometry = new THREE.BoxGeometry(bladeLength, 0.3, 3);
+                const blade = new THREE.Mesh(bladeGeometry, turbineMaterial);
+
+                blade.rotation.z = Math.PI / 2;
+                blade.position.set(0, bladeLength / 2, 0);
+                blade.castShadow = true;
+
+                const bladeGroup = new THREE.Group();
+                bladeGroup.add(blade);
+                bladeGroup.rotation.x = (i * 2 * Math.PI) / 3;
+
+                rotorGroup.add(bladeGroup);
+            }
+
+            rotorGroup.position.set(6, hubHeight, 0);
+            rotorGroup.rotationSpeed = 0.008 + Math.random() * 0.004;
+            turbineGroup.add(rotorGroup);
+
+            // Position entire turbine
+            turbineGroup.position.set(turbinePosition.x, 0, turbinePosition.z);
+
+            return { group: turbineGroup, rotor: rotorGroup, index: index };
+        }
+
+        function updateTurbineCount(newCount) {
+            newCount = Math.max(1, Math.min(10, newCount)); // Clamp between 1-10
+
+            // Remove all existing turbines
+            allTurbines.forEach(turbine => {
+                scene.remove(turbine.group);
+            });
+            allTurbines.length = 0;
+            turbineRotors.length = 0;
+
+            // Recalculate positions for new count
+            windFarmPositions = recalculateTurbinePositions(newCount);
+
+            // Create new turbines with updated positions
+            for (let i = 0; i < newCount; i++) {
+                const pos = windFarmPositions[i];
+                const turbine = createWindTurbine(pos[0], pos[1], i);
+                allTurbines.push(turbine);
+                turbineRotors.push(turbine.rotor);
+                scene.add(turbine.group);
+            }
+
+            currentTurbineCount = newCount;
+            currentCoalMass = newCount * 500000; // 500k tons per turbine
+
+            // Update coal pile, water cube, nuclear waste block, solar farm, gas tanks, and building
+            createCoalPile(currentCoalMass);
+            createWaterCube(currentCoalMass);
+            createNuclearWasteBlock(currentCoalMass);
+            createSolarFarm(newCount);
+            createGasStorageTanks(currentCoalMass);
+            createBuilding(currentCoalMass);
+
+            // Update collision objects
+            collisionObjects[0] = coalPile;
+
+            // Update info display
+            updateInfoDisplay();
+        }
+
+        function updateInfoDisplay() {
+            const infoDiv = document.getElementById('info');
+            const dimensions = calculateCoalDimensions(currentCoalMass);
+            const waterDimensions = calculateWaterCubeDimensions(currentCoalMass);
+            const wasteDimensions = calculateNuclearWasteDimensions(currentCoalMass);
+            const gasDimensions = calculateGasStorageDimensions(currentCoalMass);
+            const solarDimensions = calculateSolarFarmDimensions(currentTurbineCount);
+            infoDiv.innerHTML = `
+                <strong>Dynamic Scale Comparison</strong><br>
+                <strong>Coal Pile:</strong> ${(currentCoalMass / 1000000).toFixed(1)} million tons<br>
+                • Diameter: ~${Math.round(dimensions.radius * 2)}m • Height: ~${Math.round(dimensions.height)}m<br>
+                <strong>Water Consumed:</strong> ${(waterDimensions.gallons / 1000000000).toFixed(2)} billion gallons<br>
+                • Blue cube: ${Math.round(waterDimensions.sideLength)}m per side<br>
+                <strong>Nuclear Waste (Equivalent):</strong> ${wasteDimensions.volume.toFixed(0)} cubic meters<br>
+                • Grey cube: ${Math.round(wasteDimensions.sideLength)}m per side<br>
+                <strong>Natural Gas (Equivalent Energy):</strong> ${gasDimensions.gasMass.toFixed(0)} tons<br>
+                • Single tank: ${Math.round(gasDimensions.tankDiameter)}m × ${Math.round(gasDimensions.tankHeight)}m<br>
+                • ${(gasDimensions.gasVolume / 1000).toFixed(0)}k cubic meters at 250 bar<br>
+                <strong>Solar Farm (Equivalent Energy):</strong> ${solarDimensions.acres.toFixed(0)} acres<br>
+                • ${Math.round(solarDimensions.solarMW)}MW solar vs ${Math.round(solarDimensions.windMW)}MW wind<br>
+                • Square: ${Math.round(solarDimensions.sideLength)}m x ${Math.round(solarDimensions.sideLength)}m<br>
+                <strong>Wind Farm:</strong> ${currentTurbineCount} x 7MW Turbines<br>
+                • Total: ${currentTurbineCount * 7}MW capacity<br>
+                • Ratio: 500k tons coal per turbine<br>
+                <strong>Scale References:</strong><br>
+                • Building: ${Math.round(calculateBuildingHeight(currentCoalMass))}m tall (${Math.floor(calculateBuildingHeight(currentCoalMass) / 3.5)} stories)<br>
+                • Statue of Liberty: 93m<br>
+                • Football field: 110m x 49m<br>
+                • Grid squares: 1 ${currentUnit === 'acres' ? 'acre' : currentUnit === 'km2' ? 'km²' : 'mi²'} each
+            `;
+        }
+
+        // Wind farm positions: 2 rows of 5 turbines each
+        // Spacing: 600m crosswind, 1000m downwind  
+        // Moved west to avoid water cube overlap
+        let windFarmPositions = [
+            // Row 1 (front row)
+            [-1200, -120],   // Turbine 1
+            [-600, -120],    // Turbine 2
+            [0, -120],       // Turbine 3
+            [600, -120],     // Turbine 4
+            [1200, -120],    // Turbine 5
+            // Row 2 (back row)
+            [-1200, -1120],  // Turbine 6
+            [-600, -1120],   // Turbine 7
+            [0, -1120],      // Turbine 8
+            [600, -1120],    // Turbine 9
+            [1200, -1120]    // Turbine 10
+        ];
+
+        // Function to recalculate turbine positions based on count
+        function recalculateTurbinePositions(count) {
+            const spacing = 600; // meters between turbines
+            const rowSpacing = 1000; // meters between rows
+
+            // Calculate positions so middle turbine is closest to coal pile
+            const positions = [];
+
+            // Calculate how many turbines per row
+            const turbinesPerRow = Math.ceil(count / 2);
+            const startX = -(turbinesPerRow - 1) * spacing / 2;
+
+            // Row 1 (front row)
+            for (let i = 0; i < turbinesPerRow && positions.length < count; i++) {
+                positions.push([startX + i * spacing, -120]);
+            }
+
+            // Row 2 (back row) - only if we have more than turbinesPerRow
+            if (positions.length < count) {
+                for (let i = 0; i < turbinesPerRow && positions.length < count; i++) {
+                    positions.push([startX + i * spacing, -1120]);
+                }
+            }
+
+            return positions;
+        }
+
+        // Initialize system
+        createCoalPile(currentCoalMass); // Create initial 5 million ton coal pile
+        createWaterCube(currentCoalMass); // Create initial water cube
+        createNuclearWasteBlock(currentCoalMass); // Create initial nuclear waste block
+        createSolarFarm(10); // Create initial solar farm
+        createGasStorageTanks(currentCoalMass); // Create initial gas storage tanks
+        createBuilding(currentCoalMass); // Create initial building
+        updateTurbineCount(10); // Start with all 10 turbines
+
+        // Fireball and explosion system
+        const fireballs = [];
+        const explosions = [];
+
+        function createExplosion(position) {
+            const explosionGroup = new THREE.Group();
+            explosionGroup.position.copy(position);
+
+            // Create multiple explosion particles
+            const particleCount = 30;
+            const particles = [];
+
+            for (let i = 0; i < particleCount; i++) {
+                // Create explosion particle geometry
+                const particleGeometry = new THREE.SphereGeometry(0.5 + Math.random() * 1.5, 6, 4);
+
+                // Random explosion colors (orange, red, yellow, white)
+                const colors = [0xff6600, 0xff2200, 0xffff00, 0xffffff];
+                const particleMaterial = new THREE.MeshLambertMaterial({
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    emissive: 0x442200,
+                    transparent: true,
+                    opacity: 0.8
+                });
+
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+
+                // Random initial velocity for explosion effect
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 40, // Random X velocity
+                    Math.random() * 30 + 10,    // Upward velocity
+                    (Math.random() - 0.5) * 40  // Random Z velocity
+                );
+
+                particle.velocity = velocity;
+                particle.life = 2.0; // 2 seconds
+                particle.initialScale = particle.scale.clone();
+
+                explosionGroup.add(particle);
+                particles.push(particle);
+            }
+
+            // Add explosion properties
+            explosionGroup.particles = particles;
+            explosionGroup.life = 2.0;
+
+            scene.add(explosionGroup);
+            explosions.push(explosionGroup);
+
+            // Add sound effect (optional - browser will handle if audio is available)
+            console.log("💥 BOOM! Explosion at", position);
+        }
+
+        function createFireball() {
+            // Create a group for the flame effect
+            const fireballGroup = new THREE.Group();
+
+            // Core flame (bright yellow-white)
+            const coreGeometry = new THREE.SphereGeometry(0.3, 8, 6);
+            const coreMaterial = new THREE.MeshLambertMaterial({
+                color: 0xffff44,
+                emissive: 0xffff00
+            });
+            const core = new THREE.Mesh(coreGeometry, coreMaterial);
+            fireballGroup.add(core);
+
+            // Middle flame (orange)
+            const middleGeometry = new THREE.SphereGeometry(0.5, 8, 6);
+            const middleMaterial = new THREE.MeshLambertMaterial({
+                color: 0xff8800,
+                emissive: 0xff4400,
+                transparent: true,
+                opacity: 0.8
+            });
+            const middle = new THREE.Mesh(middleGeometry, middleMaterial);
+            fireballGroup.add(middle);
+
+            // Outer flame (red)
+            const outerGeometry = new THREE.SphereGeometry(0.7, 8, 6);
+            const outerMaterial = new THREE.MeshLambertMaterial({
+                color: 0xff2200,
+                emissive: 0x881100,
+                transparent: true,
+                opacity: 0.6
+            });
+            const outer = new THREE.Mesh(outerGeometry, outerMaterial);
+            fireballGroup.add(outer);
+
+            // Add some flame particles
+            for (let i = 0; i < 6; i++) {
+                const particleGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 4, 3);
+                const particleMaterial = new THREE.MeshLambertMaterial({
+                    color: Math.random() > 0.5 ? 0xff6600 : 0xffaa00,
+                    emissive: Math.random() > 0.5 ? 0x442200 : 0x664400,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+
+                // Random position around the fireball
+                particle.position.set(
+                    (Math.random() - 0.5) * 1.5,
+                    (Math.random() - 0.5) * 1.5,
+                    (Math.random() - 0.5) * 1.5
+                );
+                fireballGroup.add(particle);
+            }
+
+            // Position fireball at camera position
+            fireballGroup.position.copy(camera.position);
+
+            // Calculate direction based on camera rotation
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+
+            // Add velocity to the fireball
+            fireballGroup.velocity = direction.multiplyScalar(50); // fireball speed
+            fireballGroup.life = 5.0; // seconds before disappearing
+
+            scene.add(fireballGroup);
+            fireballs.push(fireballGroup);
+        }
+
+        // Football field markings (American football: 120 yards x 53.3 yards = ~110m x 49m)
+        const fieldLength = 110; // meters
+        const fieldWidth = 49; // meters
+        const fieldPosition = { x: -200, z: 0 }; // Further east to avoid coal pile overlap
+
+        // Field outline
+        const fieldGeometry = new THREE.PlaneGeometry(fieldLength, fieldWidth);
+        const fieldMaterial = new THREE.MeshLambertMaterial({
+            color: 0x2d5016, // darker green for field
+            transparent: true,
+            opacity: 0.8
+        });
+        const footballField = new THREE.Mesh(fieldGeometry, fieldMaterial);
+        footballField.rotation.x = -Math.PI / 2;
+        footballField.position.set(fieldPosition.x, 0.01, fieldPosition.z);
+        scene.add(footballField);
+
+        // Yard lines (every 10 yards = ~9.14 meters)
+        const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        for (let i = 0; i <= 12; i++) { // 13 lines total (including end zones)
+            const lineGeometry = new THREE.PlaneGeometry(0.2, fieldWidth);
+            const yardLine = new THREE.Mesh(lineGeometry, lineMaterial);
+            yardLine.rotation.x = -Math.PI / 2;
+            yardLine.position.set(
+                fieldPosition.x - fieldLength / 2 + (i * fieldLength / 12),
+                0.02,
+                fieldPosition.z
+            );
+            scene.add(yardLine);
+        }
+
+        // End zone lines (thicker)
+        const endZoneGeometry = new THREE.PlaneGeometry(0.5, fieldWidth);
+        const endZone1 = new THREE.Mesh(endZoneGeometry, lineMaterial);
+        endZone1.rotation.x = -Math.PI / 2;
+        endZone1.position.set(fieldPosition.x - fieldLength / 2, 0.02, fieldPosition.z);
+        scene.add(endZone1);
+
+        const endZone2 = new THREE.Mesh(endZoneGeometry, lineMaterial);
+        endZone2.rotation.x = -Math.PI / 2;
+        endZone2.position.set(fieldPosition.x + fieldLength / 2, 0.02, fieldPosition.z);
+        scene.add(endZone2);
+
+        // Camera controls and movement
+        let moveForward = false, moveBackward = false;
+        let moveLeft = false, moveRight = false;
+        let canJump = false, isRunning = false;
+        let isFlying = false;
+
+        // Speed tracking
+        let lastPosition = new THREE.Vector3();
+        let currentSpeed = 0;
+        let speedHistory = []; // Store last 10 speed readings for smoothing
+
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+
+        // Camera setup - human height (1.7m above ground)
+        camera.position.set(-300, 50, 300); // Adjusted to view coal pile and wind farm
+
+        // First-person camera controls
+        let yaw = -2.3; // Start looking toward the wind farm
+        let pitch = -0.2; // slight downward angle
+        let isMouseLocked = false;
+
+        // Simple mouse controls
+        document.addEventListener('mousedown', (event) => {
+            if (event.button === 0) { // left mouse button
+                isMouseLocked = true;
+                document.body.style.cursor = 'none';
+            }
+        });
+
+        document.addEventListener('mouseup', (event) => {
+            if (event.button === 0) {
+                isMouseLocked = false;
+                document.body.style.cursor = 'default';
+            }
+        });
+
+        document.addEventListener('mousemove', (event) => {
+            if (isMouseLocked) {
+                const sensitivity = 0.002;
+                yaw -= event.movementX * sensitivity;
+                pitch -= event.movementY * sensitivity;
+                pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+            }
+        });
+
+        // Keyboard controls
+        const keys = {};
+        document.addEventListener('keydown', (event) => {
+            keys[event.code] = true;
+        });
+
+        document.addEventListener('keyup', (event) => {
+            keys[event.code] = false;
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update movement
+            moveForward = keys['KeyW'];
+            moveBackward = keys['KeyS'];
+            moveLeft = keys['KeyA'];
+            moveRight = keys['KeyD'];
+            isRunning = keys['ShiftLeft'];
+
+            // Apply friction and gravity
+            velocity.x *= 0.8;
+            velocity.z *= 0.8;
+            if (!isFlying) {
+                velocity.y -= 30 * 0.016; // gravity (only when not flying)
+            } else {
+                velocity.y *= 0.9; // air resistance when flying
+            }
+
+            // Calculate movement direction based on camera rotation
+            const speed = isFlying ? 80 : (isRunning ? 40 : 20); // Faster flying speed
+
+            if (moveForward) {
+                velocity.x -= Math.sin(yaw) * speed * 0.016;
+                velocity.z -= Math.cos(yaw) * speed * 0.016;
+            }
+            if (moveBackward) {
+                velocity.x += Math.sin(yaw) * speed * 0.016;
+                velocity.z += Math.cos(yaw) * speed * 0.016;
+            }
+            if (moveLeft) {
+                velocity.x -= Math.cos(yaw) * speed * 0.016;
+                velocity.z += Math.sin(yaw) * speed * 0.016;
+            }
+            if (moveRight) {
+                velocity.x += Math.cos(yaw) * speed * 0.016;
+                velocity.z -= Math.sin(yaw) * speed * 0.016;
+            }
+
+            // Jump and Flying Controls
+            if (keys['Space'] && canJump && !isFlying) {
+                // Normal jump when on ground
+                velocity.y = 5;
+                canJump = false;
+            }
+
+            // Flying toggle with E key
+            if (keys['KeyE']) {
+                isFlying = !isFlying;
+                console.log(isFlying ? "Flying mode ON" : "Flying mode OFF");
+
+                // Update visual indicator
+                const flyingIndicator = document.getElementById('flying-indicator');
+                if (flyingIndicator) {
+                    flyingIndicator.style.display = isFlying ? 'block' : 'none';
+                }
+
+                keys['KeyE'] = false; // Prevent rapid toggling
+            }
+
+            // Flying up (when in flying mode)
+            if (keys['Space'] && isFlying) {
+                velocity.y += 40 * 0.016; // Fast flying up
+            }
+
+            // Flying down (when in flying mode)
+            if (keys['ShiftLeft'] && isFlying) {
+                velocity.y -= 40 * 0.016; // Fast flying down
+            }
+
+            // Shoot fireball
+            if (keys['KeyF']) {
+                createFireball();
+                keys['KeyF'] = false; // Prevent rapid fire
+            }
+
+            // Dynamic turbine/coal controls
+            if (keys['ArrowUp']) {
+                updateTurbineCount(currentTurbineCount + 1);
+                keys['ArrowUp'] = false; // Prevent rapid changes
+            }
+            if (keys['ArrowDown']) {
+                updateTurbineCount(currentTurbineCount - 1);
+                keys['ArrowDown'] = false; // Prevent rapid changes
+            }
+
+            // Reset coal pile with Y key
+            if (keys['KeyY']) {
+                resetCoalPile();
+                keys['KeyY'] = false; // Prevent rapid resets
+            }
+
+            // Toggle grid units with P key
+            if (keys['KeyP']) {
+                // Cycle through units: acres -> km² -> mi² -> acres
+                switch (currentUnit) {
+                    case 'acres':
+                        currentUnit = 'km2';
+                        createGridLines('km2');
+                        break;
+                    case 'km2':
+                        currentUnit = 'mi2';
+                        createGridLines('mi2');
+                        break;
+                    case 'mi2':
+                        currentUnit = 'acres';
+                        createGridLines('acres');
+                        break;
+                }
+                updateInfoDisplay(); // Update display with new units
+                keys['KeyP'] = false; // Prevent rapid toggling
+            }
+
+            // Apply movement
+            camera.position.add(velocity);
+
+            // Collision detection with coal pile
+            const raycaster = new THREE.Raycaster();
+            const rayOrigin = new THREE.Vector3(camera.position.x, camera.position.y + 50, camera.position.z);
+            const rayDirection = new THREE.Vector3(0, -1, 0);
+            raycaster.set(rayOrigin, rayDirection);
+
+            let groundHeight = 0; // default ground level
+
+            // Only check coal pile collision if it exists
+            if (coalPile) {
+                const intersects = raycaster.intersectObjects([coalPile]);
+                if (intersects.length > 0) {
+                    // We're above the coal pile or other structures
+                    groundHeight = intersects[0].point.y;
+                }
+            }
+
+            // Check if we're close to the coal pile for side collision (only if coal pile exists)
+            if (coalPile) {
+                const dimensions = calculateCoalDimensions(currentCoalMass);
+                const distanceFromCenter = Math.sqrt(camera.position.x * camera.position.x + camera.position.z * camera.position.z);
+                const coalRadiusAtHeight = dimensions.radius * (1 - (groundHeight / dimensions.height)) * 1.1; // slightly larger for climbing
+
+                if (distanceFromCenter <= coalRadiusAtHeight && camera.position.y < groundHeight + 1.7) {
+                    // We're inside or against the coal pile, adjust position
+                    groundHeight = Math.max(groundHeight, 0);
+                }
+            }
+
+            // Ground/coal pile collision
+            const minHeight = groundHeight + 1.7;
+            if (camera.position.y < minHeight) {
+                if (isFlying && keys['ShiftLeft']) {
+                    // Landing while holding Shift - disable flying
+                    isFlying = false;
+                    console.log("Flying mode OFF - landed");
+
+                    // Update visual indicator
+                    const flyingIndicator = document.getElementById('flying-indicator');
+                    if (flyingIndicator) {
+                        flyingIndicator.style.display = 'none';
+                    }
+                }
+
+                if (!isFlying) {
+                    velocity.y = Math.max(0, velocity.y); // stop downward velocity
+                    camera.position.y = minHeight;
+                    canJump = true;
+                }
+            } else if (camera.position.y >= minHeight || isFlying) {
+                canJump = (camera.position.y <= minHeight + 0.1) && !isFlying; // can jump only when near ground and not flying
+            }
+
+            // Update camera rotation
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = yaw;
+            camera.rotation.x = pitch;
+
+            // Update fireballs
+            for (let i = fireballs.length - 1; i >= 0; i--) {
+                const fireball = fireballs[i];
+
+                // Apply gravity to fireball
+                fireball.velocity.y -= 9.8 * 0.016;
+
+                // Move fireball
+                fireball.position.add(fireball.velocity.clone().multiplyScalar(0.016));
+
+                // Add flame flickering effect
+                fireball.rotation.x += 0.1;
+                fireball.rotation.y += 0.15;
+                fireball.rotation.z += 0.05;
+
+                // Make flame particles dance
+                fireball.children.forEach((child, index) => {
+                    if (index > 2) { // Only affect the particle spheres, not core/middle/outer
+                        child.position.x += (Math.random() - 0.5) * 0.02;
+                        child.position.y += (Math.random() - 0.5) * 0.02;
+                        child.position.z += (Math.random() - 0.5) * 0.02;
+                    }
+                });
+
+                // Check for collisions with objects
+                let hitSomething = false;
+
+                // Check collision with coal pile
+                if (coalPile) {
+                    // Use raycaster to check if fireball is inside coal pile
+                    const raycaster = new THREE.Raycaster();
+                    const rayOrigin = fireball.position.clone();
+                    const rayDirection = new THREE.Vector3(0, 0, 0); // No direction needed for point-in-mesh check
+
+                    // Check if fireball position is inside coal pile bounds
+                    const coalDimensions = calculateCoalDimensions(currentCoalMass);
+                    const distanceFromCoalCenter = Math.sqrt(
+                        Math.pow(fireball.position.x, 2) +
+                        Math.pow(fireball.position.z - 150, 2)
+                    );
+
+                    // Simple sphere collision with coal pile
+                    if (distanceFromCoalCenter <= coalDimensions.radius &&
+                        fireball.position.y >= 0 &&
+                        fireball.position.y <= coalDimensions.height &&
+                        !isCoalPileDestroyed) {
+                        hitSomething = true;
+                        console.log("💥 Fireball hit coal pile at:", fireball.position);
+                        console.log("Coal pile radius:", coalDimensions.radius, "height:", coalDimensions.height);
+                        console.log("Distance from center:", distanceFromCoalCenter);
+
+                        // Destroy the coal pile!
+                        isCoalPileDestroyed = true;
+                        scene.remove(coalPile);
+                        coalPile = null;
+                        collisionObjects[0] = null;
+
+                        // Create coal chunks
+                        createCoalChunks(null, currentCoalMass);
+                    }
+                }
+
+                // Check collision with water cube
+                if (waterCube && !hitSomething) {
+                    const waterDimensions = calculateWaterCubeDimensions(currentCoalMass);
+                    const waterHalfSize = waterDimensions.sideLength / 2;
+
+                    if (Math.abs(fireball.position.x - waterCube.position.x) <= waterHalfSize &&
+                        Math.abs(fireball.position.y - waterCube.position.y) <= waterHalfSize &&
+                        Math.abs(fireball.position.z - waterCube.position.z) <= waterHalfSize) {
+                        hitSomething = true;
+                    }
+                }
+
+                // Check collision with nuclear waste block
+                if (nuclearWasteBlock && !hitSomething) {
+                    const wasteDimensions = calculateNuclearWasteDimensions(currentCoalMass);
+                    const wasteHalfSize = wasteDimensions.sideLength / 2;
+
+                    if (Math.abs(fireball.position.x - nuclearWasteBlock.position.x) <= wasteHalfSize &&
+                        Math.abs(fireball.position.y - nuclearWasteBlock.position.y) <= wasteHalfSize &&
+                        Math.abs(fireball.position.z - nuclearWasteBlock.position.z) <= wasteHalfSize) {
+                        hitSomething = true;
+                    }
+                }
+
+                // Check collision with gas storage tanks
+                if (window.gasTanks && !hitSomething) {
+                    window.gasTanks.forEach(tank => {
+                        const distance = fireball.position.distanceTo(tank.position);
+                        if (distance <= 15) { // 15m radius around each tank
+                            hitSomething = true;
+                            console.log("💥 Fireball hit gas tank!");
+                        }
+                    });
+                }
+
+                // Check collision with wind turbines
+                if (!hitSomething) {
+                    allTurbines.forEach(turbine => {
+                        const turbinePos = turbine.group.position;
+                        const distance = fireball.position.distanceTo(turbinePos);
+                        if (distance <= 50) { // 50m radius around turbine
+                            hitSomething = true;
+                        }
+                    });
+                }
+
+                // Reduce life
+                fireball.life -= 0.016;
+
+                // Remove if hit something, ground, or life expired
+                if (hitSomething || fireball.position.y < 0 || fireball.life <= 0) {
+                    if (hitSomething) {
+                        // Create explosion at impact point
+                        createExplosion(fireball.position.clone());
+                        console.log("💥 Explosion created at:", fireball.position);
+                    } else if (fireball.position.y < 0) {
+                        console.log("💥 Fireball hit ground at:", fireball.position);
+                    }
+                    scene.remove(fireball);
+                    fireballs.splice(i, 1);
+                }
+            }
+
+            // Animate all wind turbine blades
+            turbineRotors.forEach(rotor => {
+                rotor.rotation.x += rotor.rotationSpeed || 0.01; // Use individual speed or default
+            });
+
+            // Update explosions
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                const explosion = explosions[i];
+
+                // Update explosion life
+                explosion.life -= 0.016;
+
+                // Animate explosion particles
+                explosion.particles.forEach(particle => {
+                    // Apply gravity to particles
+                    particle.velocity.y -= 20 * 0.016;
+
+                    // Move particle
+                    particle.position.add(particle.velocity.clone().multiplyScalar(0.016));
+
+                    // Fade out particle
+                    particle.life -= 0.016;
+                    const lifeRatio = particle.life / 2.0;
+
+                    // Scale down and fade out
+                    particle.scale.setScalar(lifeRatio);
+                    if (particle.material.opacity > 0) {
+                        particle.material.opacity = lifeRatio * 0.8;
+                    }
+
+                    // Add some rotation for visual effect
+                    particle.rotation.x += 0.1;
+                    particle.rotation.y += 0.15;
+                });
+
+                // Remove explosion when life expires
+                if (explosion.life <= 0) {
+                    scene.remove(explosion);
+                    explosions.splice(i, 1);
+                }
+            }
+
+            // Update coal chunks physics
+            for (let i = coalChunks.length - 1; i >= 0; i--) {
+                const chunk = coalChunks[i];
+
+                // Apply gravity
+                chunk.velocity.y -= 30 * 0.016;
+
+                // Apply air resistance
+                chunk.velocity.multiplyScalar(0.99);
+                chunk.angularVelocity.multiplyScalar(0.98);
+
+                // Move chunk
+                chunk.position.add(chunk.velocity.clone().multiplyScalar(0.016));
+
+                // Rotate chunk
+                chunk.rotation.x += chunk.angularVelocity.x * 0.016;
+                chunk.rotation.y += chunk.angularVelocity.y * 0.016;
+                chunk.rotation.z += chunk.angularVelocity.z * 0.016;
+
+                // Ground collision
+                if (chunk.position.y < chunk.scale.x) {
+                    chunk.position.y = chunk.scale.x;
+                    chunk.velocity.y = Math.abs(chunk.velocity.y) * 0.3; // Bounce with energy loss
+                    chunk.velocity.x *= 0.8; // Friction
+                    chunk.velocity.z *= 0.8;
+                }
+
+                // Reduce life
+                chunk.life -= 0.016;
+
+                // Remove chunk when life expires
+                if (chunk.life <= 0) {
+                    scene.remove(chunk);
+                    coalChunks.splice(i, 1);
+                }
+            }
+
+            // Update compass rotation based on camera yaw
+            const compassFace = document.getElementById('compass-face');
+            if (compassFace) {
+                // Convert yaw from radians to degrees and rotate compass face
+                // Adjust for actual scene layout: wind farm is south, coal pile is north
+                const compassRotation = (yaw * 180 / Math.PI) + 180; // Add 180° to align with scene
+                compassFace.style.transform = `rotate(${compassRotation}deg)`;
+            }
+
+            // Calculate and update speed
+            const currentPosition = camera.position.clone();
+            const distance = lastPosition.distanceTo(currentPosition);
+            const speedMPS = distance / 0.016; // meters per second (assuming 60fps)
+            const speedMPH = speedMPS * 2.237; // convert to mph
+
+            // Smooth the speed reading
+            speedHistory.push(speedMPH);
+            if (speedHistory.length > 10) {
+                speedHistory.shift();
+            }
+            const averageSpeed = speedHistory.reduce((a, b) => a + b, 0) / speedHistory.length;
+
+            // Update speed indicator
+            const speedIndicator = document.getElementById('speed-indicator');
+            if (speedIndicator) {
+                let speedIcon = '🚶'; // walking
+                if (averageSpeed > 50) speedIcon = '🏃'; // running
+                if (averageSpeed > 100) speedIcon = '🚗'; // driving
+                if (averageSpeed > 200) speedIcon = '✈️'; // flying
+                if (averageSpeed > 500) speedIcon = '🚀'; // rocket
+
+                speedIndicator.innerHTML = `${speedIcon} ${Math.round(averageSpeed)} mph`;
+            }
+
+            lastPosition.copy(currentPosition);
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+
+        // Settings Modal Functions
+        function openSettings() {
+            document.getElementById('settings-modal').style.display = 'block';
+            updateSliderValues();
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        function updateSliderValues() {
+            // Update all slider value displays
+            document.getElementById('coal-radius-value').textContent = settings.coalRadius + 'm';
+            document.getElementById('coal-height-value').textContent = settings.coalHeight + 'm';
+            document.getElementById('water-per-ton-value').textContent = settings.waterPerTon;
+            document.getElementById('nuclear-waste-volume-value').textContent = settings.nuclearWasteVolume + 'm³';
+            document.getElementById('gas-mass-ratio-value').textContent = settings.gasMassRatio.toFixed(3);
+            document.getElementById('gas-pressure-value').textContent = settings.gasPressure + ' bar';
+            document.getElementById('tank-diameter-value').textContent = settings.tankDiameter + 'm';
+            document.getElementById('tank-height-value').textContent = settings.tankHeight + 'm';
+            document.getElementById('wind-capacity-value').textContent = Math.round(settings.windCapacityFactor * 100) + '%';
+            document.getElementById('solar-capacity-value').textContent = Math.round(settings.solarCapacityFactor * 100) + '%';
+            document.getElementById('acres-per-mw-value').textContent = settings.acresPerMW.toFixed(1);
+            document.getElementById('turbine-power-value').textContent = settings.turbinePower.toFixed(1) + ' MW';
+
+            // Set slider values
+            document.getElementById('coal-radius').value = settings.coalRadius;
+            document.getElementById('coal-height').value = settings.coalHeight;
+            document.getElementById('water-per-ton').value = settings.waterPerTon;
+            document.getElementById('nuclear-waste-volume').value = settings.nuclearWasteVolume;
+            document.getElementById('gas-mass-ratio').value = settings.gasMassRatio;
+            document.getElementById('gas-pressure').value = settings.gasPressure;
+            document.getElementById('tank-diameter').value = settings.tankDiameter;
+            document.getElementById('tank-height').value = settings.tankHeight;
+            document.getElementById('wind-capacity').value = Math.round(settings.windCapacityFactor * 100);
+            document.getElementById('solar-capacity').value = Math.round(settings.solarCapacityFactor * 100);
+            document.getElementById('acres-per-mw').value = settings.acresPerMW;
+            document.getElementById('turbine-power').value = settings.turbinePower;
+        }
+
+        function applySettings() {
+            // Update settings from slider values
+            settings.coalRadius = parseInt(document.getElementById('coal-radius').value);
+            settings.coalHeight = parseInt(document.getElementById('coal-height').value);
+            settings.waterPerTon = parseInt(document.getElementById('water-per-ton').value);
+            settings.nuclearWasteVolume = parseInt(document.getElementById('nuclear-waste-volume').value);
+            settings.gasMassRatio = parseFloat(document.getElementById('gas-mass-ratio').value);
+            settings.gasPressure = parseInt(document.getElementById('gas-pressure').value);
+            settings.tankDiameter = parseInt(document.getElementById('tank-diameter').value);
+            settings.tankHeight = parseInt(document.getElementById('tank-height').value);
+            settings.windCapacityFactor = parseInt(document.getElementById('wind-capacity').value) / 100;
+            settings.solarCapacityFactor = parseInt(document.getElementById('solar-capacity').value) / 100;
+            settings.acresPerMW = parseFloat(document.getElementById('acres-per-mw').value);
+            settings.turbinePower = parseFloat(document.getElementById('turbine-power').value);
+
+            // Recreate all objects with new settings
+            updateTurbineCount(currentTurbineCount);
+
+            console.log('Settings applied:', settings);
+            closeSettings();
+        }
+
+        // Add event listeners for real-time slider updates
+        document.addEventListener('DOMContentLoaded', function () {
+            const sliders = document.querySelectorAll('.slider');
+            sliders.forEach(slider => {
+                slider.addEventListener('input', function () {
+                    const valueDisplay = this.parentElement.querySelector('.slider-value');
+                    if (valueDisplay) {
+                        if (this.id === 'coal-radius' || this.id === 'coal-height' || this.id === 'tank-diameter' || this.id === 'tank-height') {
+                            valueDisplay.textContent = this.value + 'm';
+                        } else if (this.id === 'nuclear-waste-volume') {
+                            valueDisplay.textContent = this.value + 'm³';
+                        } else if (this.id === 'gas-pressure') {
+                            valueDisplay.textContent = this.value + ' bar';
+                        } else if (this.id === 'gas-mass-ratio') {
+                            valueDisplay.textContent = parseFloat(this.value).toFixed(3);
+                        } else if (this.id === 'wind-capacity' || this.id === 'solar-capacity') {
+                            valueDisplay.textContent = this.value + '%';
+                        } else if (this.id === 'acres-per-mw') {
+                            valueDisplay.textContent = parseFloat(this.value).toFixed(1);
+                        } else if (this.id === 'turbine-power') {
+                            valueDisplay.textContent = parseFloat(this.value).toFixed(1) + ' MW';
+                        } else {
+                            valueDisplay.textContent = this.value;
+                        }
+                    }
+                });
+            });
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('settings-modal');
+            if (event.target === modal) {
+                closeSettings();
+            }
+        }
+    </script>
+</body>
+
+</html>
